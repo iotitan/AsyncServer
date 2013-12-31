@@ -3,13 +3,23 @@ public class HTTPServer {
 	
 	public static String respond(HTTPHeader hh) {
 		
-		String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>Hello from Matt Async Server 0.0.0.0.0.1 Alpha Beta</div>";
-		String out = 
-				"HTTP/1.0 200 OK\n"+
-				"Content-Type: text/html; charset=UTF-8;\n"+
-				"\n"+
-				message;
-		return out;
+		if(!hh.isValid()) {
+			return get400(0);
+		}
+		
+		// special server info case
+		if(hh.getRequestLocation().equals("/srv.info")) {
+			String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>Hello from Matt Async Server 0.0.0.0.0.1 Alpha Beta</div>";
+			String out = 
+					"HTTP/1.0 200 OK\n"+
+					"Content-Type: text/html; charset=UTF-8;\n"+
+					"\n"+
+					message;
+			return out;
+		}
+		
+		// otherwise send a 404
+		return get400(4);
 	}
 	
 	/**
@@ -25,6 +35,11 @@ public class HTTPServer {
 		switch(code) {
 		
 			case 0:
+				errorType = "Bad Request";
+				break;
+			case 4:
+				errorType = "Not found";
+				break;
 			default:
 				errorType = "Bad Request";
 		

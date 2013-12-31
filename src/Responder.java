@@ -13,7 +13,7 @@ import java.nio.channels.CompletionHandler;
 public class Responder implements CompletionHandler<AsynchronousSocketChannel, Void>
 {
 	private AsynchronousServerSocketChannel listener;
-	private static final int THREAD_COUNT = 10;
+	//private static final int THREAD_COUNT = 10;
 	
 	/**
 	 * Initialize the responder with an async server socket channel.

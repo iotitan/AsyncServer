@@ -130,8 +130,11 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 					if(messageTerminators[j].charAt(terminatorCount[j]) == cb[i]) {
 						terminatorCount[j]++;
 						if(terminatorCount[j] == messageTerminators[j].length()) {
-							// TODO: THIS DOES NOT ACCEPT CONTENT AFTER HEADERS (no payload)
 							readBuffList.add(new String(cb,0,i+1));
+							
+							// TODO: THIS DOES NOT ACCEPT CONTENT AFTER HEADERS (no payload)
+							// TODO: Payload handling here - be sure to add the rest of the buffer above
+							
 							setMode(Mode.PROC);
 							completed(0,a);
 							return;
@@ -189,13 +192,14 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	 * @param a
 	 */
 	private void handleProc(Void a) {
-		// TODO: handle empty buffers
+		// TODO: handle empty buffers, this is causing a bunch of exceptions currently
 		System.out.println("LOG: Now processing...");
 		String temp = readBuffList.get(0);
 		for(int i = 1; i < readBuffList.size(); i++)
 			temp += readBuffList.get(i);
+		System.out.println(temp);
 		output = HTTPServer.respond(new HTTPHeader(temp));
-		// TODO: have a Mode.ERROR for handling bad requests
+		// TODO: have a Mode.ERROR for handling bad requests and headers that are too long
 		setMode(Mode.WRITE);
 		// trigger completion call since this particular part is synchronous
 		completed(0,a);
