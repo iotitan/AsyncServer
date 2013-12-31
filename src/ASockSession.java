@@ -23,7 +23,7 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	private ByteBuffer buff;
 	
 	// for detecting the end of a message
-	private static String[] messageTerminators = {"\n\n","\r\n\r\n"};
+	private static final String[] messageTerminators = {"\n\n","\r\n\r\n"};
 	private int terminatorCount[];
 	
 	// mode information
@@ -106,7 +106,7 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	 * @param a
 	 */
 	private void continueRead(int read, Void a) {
-		
+
 		// did not read anything, skip processing...
 		if(read < 0) {
 			setMode(Mode.PROC);
@@ -134,7 +134,7 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 							
 							// TODO: THIS DOES NOT ACCEPT CONTENT AFTER HEADERS (no payload)
 							// TODO: Payload handling here - be sure to add the rest of the buffer above
-							
+
 							setMode(Mode.PROC);
 							completed(0,a);
 							return;
@@ -192,13 +192,22 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	 * @param a
 	 */
 	private void handleProc(Void a) {
-		// TODO: handle empty buffers, this is causing a bunch of exceptions currently
-		System.out.println("LOG: Now processing...");
-		String temp = readBuffList.get(0);
-		for(int i = 1; i < readBuffList.size(); i++)
-			temp += readBuffList.get(i);
-		System.out.println(temp);
-		output = HTTPServer.respond(new HTTPHeader(temp));
+		/* TODO: Chromium and possibly other browsers open a connection but send 
+		 * 		 no request (usually where favicon.ico request would be)... 
+		 */
+		if(!readBuffList.isEmpty()) {
+			System.out.println("LOG: Now processing...");
+			String temp = readBuffList.get(0);
+			for(int i = 1; i < readBuffList.size(); i++)
+				temp += readBuffList.get(i);
+			
+			output = HTTPServer.respond(new HTTPHeader(temp));
+		}
+		else {
+			System.out.println("WARNING: Client appears to have opened a connection but made no request!");
+			output = HTTPServer.get400(0);
+		}
+		
 		// TODO: have a Mode.ERROR for handling bad requests and headers that are too long
 		setMode(Mode.WRITE);
 		// trigger completion call since this particular part is synchronous

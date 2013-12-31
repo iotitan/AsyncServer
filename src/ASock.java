@@ -21,5 +21,4 @@ public class ASock
 		while(true){}
 
 	}
-//comment
 }
