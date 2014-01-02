@@ -6,25 +6,51 @@
  */
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+
 
 public class HTTPHeader {
 	
 	public static enum method{OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT};
 	
+	private boolean isRequest;
+	
+	// request specific info
 	private method requestMethod;
 	private String requestLocation;
 	private String requestHTTPVersion;
+	
+	// response specific info
+	private static final String responseHTTPVersion = "1.1"; // TODO: this is what we are aiming for
+	private int responseCode;
+	private String responseMessage;
 	
 	// TODO: may or may not be better to have standard fields hard-coded instead of create maps for each request
 	private Map<String,String> headers = null;
 	private boolean valid = true;
 	
 	/**
+	 * Initialize a response header
+	 * @param code The HTTP status code i.e. 200, 404, 500 etc.
+	 * @param responseMsg The message attached to the code
+	 */
+	public HTTPHeader(int code, String responseMsg) {
+		isRequest = false;
+		responseCode = code;
+		responseMessage = responseMsg;
+		
+		headers = new HashMap<String,String>();
+	}
+	
+	/**
 	 * Attempt to parse a HTTP header
 	 * @param rawData The raw request data
 	 */
 	public HTTPHeader(String rawData) {
+		
+		isRequest = true;
 		
 		if(rawData == null) {
 			valid = false;
@@ -101,12 +127,64 @@ public class HTTPHeader {
 	}
 	
 	/**
+	 * Get the response INCLUDING empty line indicating the end of the header.
+	 * @return HTTPHeader in String form
+	 */
+	public String toString() {
+		
+		StringBuilder out = new StringBuilder();
+		
+		if(isRequest) {
+			out.append(requestMethod.name());
+			out.append(" ");
+			out.append(requestLocation);
+			out.append(" ");
+			out.append(requestHTTPVersion);
+			out.append("\r\n");
+		}
+		else {
+			out.append("HTTP/");
+			out.append(responseHTTPVersion);
+			out.append(" ");
+			out.append(responseCode);
+			out.append(" ");
+			out.append(responseMessage);
+			out.append("\r\n");
+		}
+		
+		// get all key value pairs (header and corresponding value)
+		Iterator<Entry<String,String>> hv = headers.entrySet().iterator();
+		Entry<String,String> temp;
+		while(hv.hasNext()) {
+			temp = hv.next();
+			out.append(temp.getKey());
+			out.append(": ");
+			out.append(temp.getValue());
+			out.append("\r\n");
+		}
+		
+		// ending blank line
+		out.append("\r\n");
+		
+		return out.toString();
+	}
+	
+	/**
 	 * Get a header by name
 	 * @param name The name of the header field
 	 * @return Value of the field, null if it does not exist
 	 */
 	public String getAttribute(String name) {		
 		return headers.get(name);
+	}
+	
+	/**
+	 * Add a header field to this object
+	 * @param name Name of the field
+	 * @param value Value the field has
+	 */
+	public void setAttribute(String name, String value) {		
+		headers.put(name, value);
 	}
 	
 	/**

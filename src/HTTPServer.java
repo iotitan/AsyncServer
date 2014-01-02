@@ -1,6 +1,38 @@
+/*
+ * File: HTTPServer.java
+ * Author: Matt Jones
+ * Date: 1/2/2014
+ * Desc: This class responds to HTTP requests given a HTTPHeader object. None of the networking
+ *       should be done in this class.
+ */
+
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
 
 public class HTTPServer {
 	
+	// default date format for all threads to use (only ever needs to be set once)
+	private static SimpleDateFormat defaultSDF;
+	
+	/**
+	 * Initialize the static resources for the server
+	 */
+	public static void initServer() {
+		// set up gmt timezone
+		HTTPServer.defaultSDF = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss");
+		HTTPServer.defaultSDF.setTimeZone(TimeZone.getTimeZone("GMT"));
+	}
+	
+	/**
+	 * Respond to a request given a HTTPHeader
+	 * @param hh HTTPHeader with request information
+	 * @return String with response data
+	 *  
+	 * TODO: Return a stream instead of a string. 
+	 */
 	public static String respond(HTTPHeader hh) {
 		
 		if(!hh.isValid()) {
@@ -9,12 +41,14 @@ public class HTTPServer {
 		
 		// special server info case
 		if(hh.getRequestLocation().equals("/srv.info")) {
+
+			HTTPHeader resp = new HTTPHeader(200,"OK");
+			resp.setAttribute("Date", defaultSDF.format(new Date()) + " GMT");
+			resp.setAttribute("Content-Type", "text/html; charset=UTF-8;");
+			
 			String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>Hello from Matt Async Server 0.0.0.0.0.1 Alpha Beta</div>";
-			String out = 
-					"HTTP/1.0 200 OK\n"+
-					"Content-Type: text/html; charset=UTF-8;\n"+
-					"\n"+
-					message;
+			String out = resp.toString() + message;
+			
 			return out;
 		}
 		
@@ -38,19 +72,20 @@ public class HTTPServer {
 				errorType = "Bad Request";
 				break;
 			case 4:
-				errorType = "Not found";
+				errorType = "Not Found";
 				break;
 			default:
 				errorType = "Bad Request";
 		
 		}
 		
+		HTTPHeader resp = new HTTPHeader(errorNum,errorType);
+		resp.setAttribute("Date", defaultSDF.format(new Date()) + " GMT");
+		resp.setAttribute("Content-Type", "text/html; charset=UTF-8;");
+		
 		String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>"+errorNum+" "+errorType+"</div>";
-		String out = 
-				"HTTP/1.0 "+errorNum+" "+errorType+"\n"+
-				"Content-Type: text/html; charset=UTF-8;\n"+
-				"\n"+
-				message;
+		String out = resp.toString() + message;
+		
 		return out;
 		
 	}

@@ -15,6 +15,10 @@ public class ASock
 	{
 		System.out.println("Starting up...");
 		
+		HTTPServer.initServer();
+		
+		System.out.println("Startup complete...");
+		
 		final AsynchronousServerSocketChannel listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(11111));
 		
 		listener.accept(null, new Responder(listener));
