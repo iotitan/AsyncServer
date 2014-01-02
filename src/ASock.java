@@ -22,7 +22,13 @@ public class ASock
 		final AsynchronousServerSocketChannel listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(11111));
 		
 		listener.accept(null, new Responder(listener));
-		while(true){}
+		while(true) {
+			try {
+				Thread.sleep(5000);
+			} catch (Exception e) {
+				
+			}
+		}
 
 	}
 }
