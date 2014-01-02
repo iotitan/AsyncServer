@@ -2,7 +2,8 @@
  * File: HTTPHeader.java
  * Author: Matt Jones
  * Date: 12/31/2013
- * Desc: Generic HTTP header object, uses HashMap to store keys/values
+ * Desc: Generic HTTP header object, uses HashMap to store keys/values. This can be both a 
+ *       request and a response header.
  */
 
 import java.util.HashMap;
