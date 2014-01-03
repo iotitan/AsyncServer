@@ -6,11 +6,16 @@
  */
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
+
+import com.github.iotitan.annotations.GET;
 
 public class ASockSession implements CompletionHandler<Integer, Void>
 {
@@ -30,8 +35,15 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	public static enum Mode{READ, WRITE, PROC, DONE, ERROR};
 	private Mode mode;
 	
+	//Reflection Invoker
+	private RouteInvoker invoker = new RouteInvoker();
+
+	//Request String;
+	public static HTTPHeader request;
+	public static HTTPHeader response;
+	
 	// final string to send
-	String output;
+	public static String output;
 	
 
 	/**
@@ -201,6 +213,8 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 			for(int i = 1; i < readBuffList.size(); i++)
 				temp += readBuffList.get(i);
 			
+			request = new HTTPHeader(temp);
+			invoker.callMethodByAnnotation(ASock.route, request.getRequestMethod().toString().toString(), request.getRequestLocation());
 			output = HTTPServer.respond(new HTTPHeader(temp));
 		}
 		else {

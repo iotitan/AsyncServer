@@ -11,6 +11,12 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 
 public class ASock
 {	
+	/**
+	 * Example, only for testing
+	 * route should be a dynamically loaded class ideally and not static
+	 */
+	public static RouteHandler route = new RouteHandler();
+	
 	public static void main(String[] args) throws IOException
 	{
 		System.out.println("Starting up...");
