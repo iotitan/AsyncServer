@@ -15,11 +15,19 @@ public class ASock
 	{
 		System.out.println("Starting up...");
 		
+		ServerConfig sc = new ServerConfig("web.conf");
+		
+		System.out.println("CONFIG: port: " + sc.getSetting("server.port"));
+		System.out.println("CONFIG: root directory: " + sc.getSetting("server.root"));
+		
+		// TODO: change to accept ServerConfig object
 		HTTPServer.initServer();
 		
 		System.out.println("Startup complete...");
 		
-		final AsynchronousServerSocketChannel listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(11111));
+		// TODO: error handling if parseInt() fails. Possibly do this in ServerConfig class
+		final AsynchronousServerSocketChannel listener = 
+				AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(Integer.parseInt(sc.getSetting("server.port"))));
 		
 		listener.accept(null, new Responder(listener));
 		while(true) {
