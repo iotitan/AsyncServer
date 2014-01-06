@@ -8,6 +8,8 @@
 
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
@@ -20,6 +22,7 @@ public class HTTPServer {
 	// default date format for all threads to use (only ever needs to be set once)
 	private static SimpleDateFormat defaultSDF;
 	private static ServerConfig conf;
+	private static String serverRoot;
 	
 	/**
 	 * Initialize the static resources for the server
@@ -30,6 +33,8 @@ public class HTTPServer {
 		HTTPServer.defaultSDF.setTimeZone(TimeZone.getTimeZone("GMT"));
 		// set the settings for this server
 		HTTPServer.conf = sc;
+		
+		serverRoot = conf.getSetting("server.root");
 	}
 	
 	/**
@@ -58,8 +63,38 @@ public class HTTPServer {
 			return new ByteArrayInputStream(out.getBytes(Charset.forName("UTF-8")));
 		}
 		
-		// otherwise send a 404
-		return new ByteArrayInputStream(get400(4).getBytes(Charset.forName("UTF-8")));
+		// search for the file in the server directory root
+		FileInputStream fs = null;
+		boolean isDir = false;
+		try {
+			File location = new File(serverRoot + hh.getRequestLocation());
+			fs = new FileInputStream(location);
+		}
+		catch(Exception e) {
+			
+		}
+		
+		// handle the file or directory request
+		if(fs != null) {
+			if(isDir) {
+				// TODO: directory listing
+				HTTPHeader resp = new HTTPHeader(200,"OK");
+				resp.setAttribute("Date", defaultSDF.format(new Date()) + " GMT");
+				resp.setAttribute("Content-Type", "text/html; charset=UTF-8;");
+				String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>Directories have no listing yet...</div>";
+				String out = resp.toString() + message;
+				return new ByteArrayInputStream(out.getBytes(Charset.forName("UTF-8")));
+			}
+			else {
+				// add header to output and return stream
+				// TODO: add header to stream
+				return fs;
+			}
+		}
+		else {	
+			// otherwise send a 404
+			return new ByteArrayInputStream(get400(4).getBytes(Charset.forName("UTF-8")));
+		}
 	}
 	
 	/**
