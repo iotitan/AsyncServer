@@ -7,6 +7,9 @@
  */
 
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -16,14 +19,17 @@ public class HTTPServer {
 	
 	// default date format for all threads to use (only ever needs to be set once)
 	private static SimpleDateFormat defaultSDF;
+	private static ServerConfig conf;
 	
 	/**
 	 * Initialize the static resources for the server
 	 */
-	public static void initServer() {
+	public static void initServer(ServerConfig sc) {
 		// set up gmt timezone
 		HTTPServer.defaultSDF = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss");
 		HTTPServer.defaultSDF.setTimeZone(TimeZone.getTimeZone("GMT"));
+		// set the settings for this server
+		HTTPServer.conf = sc;
 	}
 	
 	/**
@@ -33,10 +39,10 @@ public class HTTPServer {
 	 *  
 	 * TODO: Return a stream instead of a string. 
 	 */
-	public static String respond(HTTPHeader hh) {
+	public static InputStream respond(HTTPHeader hh) {
 		
 		if(!hh.isValid()) {
-			return get400(0);
+			return new ByteArrayInputStream(get400(0).getBytes(Charset.forName("UTF-8")));
 		}
 		
 		// special server info case
@@ -49,11 +55,11 @@ public class HTTPServer {
 			String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>Hello from Matt Async Server 0.0.0.0.0.1 Alpha Beta</div>";
 			String out = resp.toString() + message;
 			
-			return out;
+			return new ByteArrayInputStream(out.getBytes(Charset.forName("UTF-8")));
 		}
 		
 		// otherwise send a 404
-		return get400(4);
+		return new ByteArrayInputStream(get400(4).getBytes(Charset.forName("UTF-8")));
 	}
 	
 	/**

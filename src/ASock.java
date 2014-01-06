@@ -20,8 +20,7 @@ public class ASock
 		System.out.println("CONFIG: port: " + sc.getSetting("server.port"));
 		System.out.println("CONFIG: root directory: " + sc.getSetting("server.root"));
 		
-		// TODO: change to accept ServerConfig object
-		HTTPServer.initServer();
+		HTTPServer.initServer(sc);
 		
 		System.out.println("Startup complete...");
 		

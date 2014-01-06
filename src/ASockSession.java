@@ -5,7 +5,9 @@
  * Desc: Handle asynchronous socket sessions
  */
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
@@ -19,8 +21,10 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	
 	// input and output buffers
 	private static final int buffSize = 2048;
-	private LinkedList<String> readBuffList; // consecutive reads from the client (basically a list of buffers)
+	// TODO: StringBuilder....
+	private StringBuilder readBuff; // read accumulator
 	private ByteBuffer buff;
+	private byte[] writeByteArr;
 	
 	// for detecting the end of a message
 	private static final String[] messageTerminators = {"\n\n","\r\n\r\n"};
@@ -30,8 +34,8 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	public static enum Mode{READ, WRITE, PROC, DONE, ERROR};
 	private Mode mode;
 	
-	// final string to send
-	String output;
+	// response to send in form of an InputStream
+	private InputStream response;
 	
 
 	/**
@@ -40,8 +44,11 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	 */
 	public ASockSession(AsynchronousSocketChannel a) {
 		as = a;
-		readBuffList = new LinkedList<String>();
+		readBuff = new StringBuilder();
+		
 		buff = ByteBuffer.allocate(buffSize);
+		writeByteArr = new byte[buffSize];
+		
 		mode = Mode.READ; // start out in read mode
 		
 		terminatorCount = new int[messageTerminators.length];
@@ -124,13 +131,14 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 		for(i = 0; i < read; i++) {
 			cb[i] = (char)buff.get(i);
 			// TODO: possibly have a hashmap of all characters involved in null terminator
+			// TODO: possibly do input scanning with Scanner class
 			if(cb[i] == '\r' || cb[i] == '\n') {
 				resetCount = true;
 				for(j = 0; j < messageTerminators.length; j++) {
 					if(messageTerminators[j].charAt(terminatorCount[j]) == cb[i]) {
 						terminatorCount[j]++;
 						if(terminatorCount[j] == messageTerminators[j].length()) {
-							readBuffList.add(new String(cb,0,i+1));
+							readBuff.append(new String(cb,0,i+1));
 							
 							// TODO: THIS DOES NOT ACCEPT CONTENT AFTER HEADERS (no payload)
 							// TODO: Payload handling here - be sure to add the rest of the buffer above
@@ -152,7 +160,7 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 		}
 		
 		buff.position(0);
-		readBuffList.add(new String(cb));
+		readBuff.append(new String(cb));
 		
 		// ready buffer for new data
 		buff.clear();
@@ -166,12 +174,29 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	private void continueWrite(Void a) {
 		System.out.println("LOG: Now writing back to client...");
 		
-		ByteBuffer op = ByteBuffer.allocate(output.length());
-		op.put(output.getBytes(Charset.forName("UTF-8")));
-		op.position(0); // reset buffer position
-		
-		setMode(Mode.DONE);
-		as.write(op, null, this);
+		try {
+			buff.position(0); // reset from last use
+			int size = response.read(writeByteArr);
+			
+			buff.put(writeByteArr,0,size);
+			buff.position(0); // reset buffer position
+			
+			// if what was read is less than the buffer size, we are done writing
+			if(size < buffSize) {
+				buff.limit(size);
+				setMode(mode.DONE);
+				response.close();
+			}
+			
+			as.write(buff, null, this);
+		}
+		catch(Exception e) {
+			System.out.println("ERROR: Input stream read failed.\n" + e.getMessage());
+			// TODO: error mode needs to be set up
+			//setMode(Mode.ERROR);
+			setMode(Mode.DONE);
+			completed(0,a);
+		}
 	}
 	
 	/**
@@ -195,17 +220,13 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 		/* TODO: Chromium and possibly other browsers open a connection but send 
 		 * 		 no request (usually where favicon.ico request would be)... 
 		 */
-		if(!readBuffList.isEmpty()) {
+		if(readBuff.length() > 0) {
 			System.out.println("LOG: Now processing...");
-			String temp = readBuffList.get(0);
-			for(int i = 1; i < readBuffList.size(); i++)
-				temp += readBuffList.get(i);
-			
-			output = HTTPServer.respond(new HTTPHeader(temp));
+			response = HTTPServer.respond(new HTTPHeader(readBuff.toString()));
 		}
 		else {
 			System.out.println("WARNING: Client appears to have opened a connection but made no request!");
-			output = HTTPServer.get400(0);
+			response = new ByteArrayInputStream(HTTPServer.get400(0).getBytes());
 		}
 		
 		// TODO: have a Mode.ERROR for handling bad requests and headers that are too long
