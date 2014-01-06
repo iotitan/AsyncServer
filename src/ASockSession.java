@@ -11,8 +11,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.nio.charset.Charset;
-import java.util.LinkedList;
+
 
 public class ASockSession implements CompletionHandler<Integer, Void>
 {
@@ -20,7 +19,7 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	private AsynchronousSocketChannel as; // socket we are sending and receiving on
 	
 	// input and output buffers
-	private static final int buffSize = 2048;
+	private static final int buffSize = 4096;
 	// TODO: StringBuilder....
 	private StringBuilder readBuff; // read accumulator
 	private ByteBuffer buff;
@@ -34,7 +33,7 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	public static enum Mode{READ, WRITE, PROC, DONE, ERROR};
 	private Mode mode;
 	
-	// response to send in form of an InputStream
+	// response to send in form of an InputStream; this will more than likely be a SequenceInputStream
 	private InputStream response;
 	
 
@@ -89,13 +88,13 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	 * Method required by interface, if a read/write fails, do this
 	 */
 	public void failed(Throwable t, Void a) {
-		System.out.println("LOG: An error occured while performing " + getMode().name());
+		System.out.println("ERROR: An error occured while performing " + getMode().name());
 		t.printStackTrace();
 		try {
 			as.close();
 		}
 		catch(IOException e) {
-			System.out.println("LOG: Attempted to close previously closed connection.");
+			System.out.println("WARNING: Attempted to close previously closed connection.");
 		}
 	}
 	
@@ -172,26 +171,32 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	 * @param a
 	 */
 	private void continueWrite(Void a) {
-		System.out.println("LOG: Now writing back to client...");
+		//System.out.println("LOG: Now writing back to client...");
 		
 		try {
 			buff.position(0); // reset from last use
 			int size = response.read(writeByteArr);
 			
+			// if size < 0, we reached the end of the stream
+			// NOTE: SequenceInputStream does NOT appear to do unbroken reads across streams
+			if(size < 0) {
+				response.close();
+				setMode(Mode.DONE);
+				completed(0,a);
+				return;
+			}
+			
+			buff.limit(size);
+			
 			buff.put(writeByteArr,0,size);
 			buff.position(0); // reset buffer position
 			
-			// if what was read is less than the buffer size, we are done writing
-			if(size < buffSize) {
-				buff.limit(size);
-				setMode(mode.DONE);
-				response.close();
-			}
-			
+			//System.out.println(new String(buff.array(),0,size));
 			as.write(buff, null, this);
 		}
 		catch(Exception e) {
-			System.out.println("ERROR: Input stream read failed.\n" + e.getMessage());
+			System.out.println("ERROR: Input stream read failed.\n" + e.getMessage() + "\n");
+			e.printStackTrace();
 			// TODO: error mode needs to be set up
 			//setMode(Mode.ERROR);
 			setMode(Mode.DONE);
@@ -203,12 +208,12 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 	 * Perform this once a transaction to the client has completed
 	 */
 	private void handleDone() {	
-		System.out.println("LOG: Closing connection.");
+		//System.out.println("LOG: Closing connection.");
 		try {
 			as.close();
 		}
 		catch(IOException e) {
-			System.out.println("LOG: Attempted to close previously closed connection.");
+			System.out.println("WARNING: Attempted to close previously closed connection.");
 		}
 	}
 	
@@ -221,7 +226,7 @@ public class ASockSession implements CompletionHandler<Integer, Void>
 		 * 		 no request (usually where favicon.ico request would be)... 
 		 */
 		if(readBuff.length() > 0) {
-			System.out.println("LOG: Now processing...");
+			//System.out.println("LOG: Now processing...");
 			response = HTTPServer.respond(new HTTPHeader(readBuff.toString()));
 		}
 		else {

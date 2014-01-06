@@ -22,7 +22,8 @@ public class ServerConfig {
 	// TODO: this could probably just be a 1D array, but 2D is easier to read/understand
 	public static final String[][] requiredSettings = {
 														{"server.port","8080"},
-														{"server.root","/web"}
+														{"server.root","/web"},
+														{"server.index","index.html"}
 													};
 	
 	/**

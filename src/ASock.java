@@ -19,6 +19,7 @@ public class ASock
 		
 		System.out.println("CONFIG: port: " + sc.getSetting("server.port"));
 		System.out.println("CONFIG: root directory: " + sc.getSetting("server.root"));
+		System.out.println("CONFIG: index: " + sc.getSetting("server.index"));
 		
 		HTTPServer.initServer(sc);
 		
