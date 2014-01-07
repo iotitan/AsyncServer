@@ -21,11 +21,28 @@ public class ServerConfig {
 	// hard-coded default settings in 2D array
 	// TODO: this could probably just be a 1D array, but 2D is easier to read/understand
 	public static final String[][] requiredSettings = {
-														{"server.port","8080"},
-														{"server.root","/web"},
-														{"server.index","index.html"}
-													};
-	
+									{"server.port","8080"},
+									{"server.root","/web"},
+									{"server.index","index.html"}
+	};
+	// some common mime types to load in
+	public static final String[][] mimeTypes = {
+									{"mime.images.bmp","image/bmp"},
+									{"mime.images.gif","image/gif"},
+									{"mime.images.jpg","image/jpg"},
+									{"mime.images.jpeg","image/jpeg"},
+									{"mime.images.png","image/png"},
+									
+									{"mime.text.cmd","text/cmd"},
+									{"mime.text.css","text/css"},
+									{"mime.text.csv","text/csv"},
+									{"mime.text.html","text/html"},
+									{"mime.text.js","text/javascript"},
+									{"mime.text.txt","text/plain"},
+									{"mime.text.xml","text/xml"},
+									
+									{"mime.application.json","application/json"}		
+	};
 	/**
 	 * Node for the configuration tree
 	 */
@@ -169,6 +186,7 @@ public class ServerConfig {
 		ConfNode temp = root;
 		
 		// add nodes in the tree until the last part of the name, then add the value
+		// setting value to null will prevent erasing existing non-leaf node data
 		for(int i = 0; i < nameSplit.length-1; i++) {
 			temp = temp.addChild(nameSplit[i], null);
 		}
