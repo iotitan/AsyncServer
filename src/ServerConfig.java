@@ -48,7 +48,7 @@ public class ServerConfig {
 		/**
 		 * Add a child node to config tree. Returns existing node if name exists.
 		 * @param n Name of node
-		 * @param v Value contained in node
+		 * @param v Value contained in node. Set to null if possible duplicate
 		 * @return The created/existing node
 		 */
 		public ConfNode addChild(String n, String v) {
@@ -61,7 +61,8 @@ public class ServerConfig {
 				temp = it.next();
 				if(temp.name.equals(n)) {
 					// place warning here? a value may have been overwritten
-					temp.value = v;
+					if(v != null)
+						temp.value = v;
 					return temp;
 				}
 			}
