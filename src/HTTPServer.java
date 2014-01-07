@@ -57,11 +57,13 @@ public class HTTPServer {
 		// special server info case
 		if(hh.getRequestLocation().equals("/srv.info")) {
 
+			String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>Hello from Matt Async Server 0.0.0.0.0.1 Alpha Beta</div>";
+
 			HTTPHeader resp = new HTTPHeader(200,"OK");
 			resp.setAttribute("Date", defaultSDF.format(new Date()) + " GMT");
 			resp.setAttribute("Content-Type", "text/html; charset=UTF-8;");
+			resp.setAttribute("Content-Length", ""+message.length());
 			
-			String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>Hello from Matt Async Server 0.0.0.0.0.1 Alpha Beta</div>";
 			String out = resp.toString() + message;
 			
 			return new ByteArrayInputStream(out.getBytes(Charset.forName("UTF-8")));
@@ -72,9 +74,13 @@ public class HTTPServer {
 		boolean isDir = false;
 		String fileType = null;
 		
+		// size of the returned content (if available)
+		long contentLength = 0;
+		
 		try {
 			File location = new File(serverRoot + hh.getRequestLocation());
 			fs = new FileInputStream(location);
+			contentLength = location.length();
 			
 			// TODO: if is directory, check to see if there is an index page before listing files.
 			
@@ -101,6 +107,7 @@ public class HTTPServer {
 			HTTPHeader resp = new HTTPHeader(200,"OK");
 			resp.setAttribute("Date", defaultSDF.format(new Date()) + " GMT");
 			resp.setAttribute("Content-Type", "text/html; charset=UTF-8;");
+			
 			String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>Directories have no listing yet...</div>";
 			String out = resp.toString() + message;
 			
@@ -125,6 +132,7 @@ public class HTTPServer {
 			HTTPHeader resp = new HTTPHeader(200,"OK");
 			resp.setAttribute("Date", defaultSDF.format(new Date()) + " GMT");
 			resp.setAttribute("Content-Type", "text/html; charset=UTF-8;");
+			resp.setAttribute("Content-Length", ""+contentLength);
 			ByteArrayInputStream headerBytes = new ByteArrayInputStream(resp.toString().getBytes());
 			
 			// create a single stream from the header and the file
@@ -160,11 +168,13 @@ public class HTTPServer {
 		
 		}
 		
+		String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>"+errorNum+" "+errorType+"</div>";
+		
 		HTTPHeader resp = new HTTPHeader(errorNum,errorType);
 		resp.setAttribute("Date", defaultSDF.format(new Date()) + " GMT");
 		resp.setAttribute("Content-Type", "text/html; charset=UTF-8;");
+		resp.setAttribute("Content-Length", ""+message.length());
 		
-		String message = "<div style='font-family: arial; font-size: 16px; padding: 25px; color: rgb(50,50,100);'>"+errorNum+" "+errorType+"</div>";
 		String out = resp.toString() + message;
 		
 		return out;
