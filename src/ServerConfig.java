@@ -9,7 +9,6 @@
  */
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Scanner;
 
@@ -72,10 +71,7 @@ public class ServerConfig {
 			if(children == null)
 				children = new LinkedList<ConfNode>();
 			// check for existing entries
-			Iterator<ConfNode> it = children.iterator();
-			ConfNode temp = null;
-			while(it.hasNext()) {
-				temp = it.next();
+			for(ConfNode temp:children) {
 				if(temp.name.equals(n)) {
 					// place warning here? a value may have been overwritten
 					if(v != null)
@@ -97,10 +93,7 @@ public class ServerConfig {
 		public ConfNode getChild(String name) {
 			if(name == null || children == null || children.size() == 0)
 				return null;
-			Iterator<ConfNode> it = children.iterator();
-			ConfNode temp = null;
-			while(it.hasNext()) {
-				temp = it.next();
+			for(ConfNode temp:children) {
 				if(name.equals(temp.name)) {
 					return temp;
 				}
